@@ -1,0 +1,13 @@
+absolute_var:
+  hard: 0.20        # 20% of NAV, 99% confidence, 20 day holding period
+  amber: 0.16       # 80% of the hard limit
+relative_var:
+  hard: 2.00        # 200% of the reference portfolio var
+  amber: 1.60
+commitment_leverage:
+  hard: 2.00
+  amber: 1.70
+var_lookback_days: 500
+var_confidence: 0.99
+holding_period_days: 20
+backtest_window: 250

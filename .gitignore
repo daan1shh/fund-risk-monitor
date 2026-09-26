@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/cache/
+reports/*
+!reports/.gitkeep
+BUILD-PROMPT.md
+INTERVIEW-NOTES.md
+.DS_Store
