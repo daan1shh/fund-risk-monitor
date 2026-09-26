@@ -2,6 +2,8 @@
 
 A small daily risk monitor for a UCITS style fund, and a validation of the VaR model behind it.
 
+The latest dashboard is at [daan1shh.github.io/riskmon](https://daan1shh.github.io/riskmon/) and opens in any browser.
+
 The monitor takes a multi-asset portfolio of ETFs, computes its 20 day 99% VaR, relative VaR against a 60/40 reference portfolio and commitment leverage, and checks each one against the UCITS hard limits and an internal amber threshold below them. Every morning it writes a short report that lists only what needs attention, meaning anything amber or in breach plus the three metrics that moved most overnight. The full metrics table is there if you ask for it, but the point of the report is that it fits on one screen.
 
 The second half asks whether the VaR number can be trusted. It backtests four one day VaR estimators over the last 250 days (historical simulation, parametric normal, GARCH(1,1) with Student t innovations, and filtered historical simulation), counts the days where the realised loss beat the forecast, and scores each model with the Basel traffic light and the Kupiec proportion of failures test.
