@@ -27,6 +27,7 @@ body { margin: 0; background: var(--bg); color: var(--ink);
   font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 40px; }
 section { margin-top: 36px; }
+h1 { font-size: 20px; font-weight: 600; margin: 0 0 14px; }
 h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
   color: var(--muted); margin: 0 0 10px; }
 .status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px;
@@ -219,8 +220,9 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
     html = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Risk monitor {as_of:%Y-%m-%d}</title>
+<title>UCITS Risk Monitor</title>
 <style>{CSS}</style></head><body><main>
+<h1>UCITS Risk Monitor</h1>
 {_status_bar(portfolio["name"], portfolio["nav"], f"{as_of:%Y-%m-%d}", worst_status(rows))}
 <section><h2>Limits</h2><div class="tiles">{"".join(_tile(r) for r in rows)}</div>
 <p class="note">Bar shows utilisation of the hard limit, the black tick marks the amber threshold.</p></section>

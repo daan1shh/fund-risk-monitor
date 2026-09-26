@@ -1,8 +1,8 @@
-# riskmon
+# UCITS Risk Monitor
 
 A small daily risk monitor for a UCITS style fund, and a validation of the VaR model behind it.
 
-The latest dashboard is at [daan1shh.github.io/riskmon](https://daan1shh.github.io/riskmon/) and opens in any browser.
+The latest dashboard is at [daan1shh.github.io/ucits-risk-monitor](https://daan1shh.github.io/ucits-risk-monitor/) and opens in any browser.
 
 The monitored fund holds five Xtrackers ETFs, 45% MSCI World, 15% MSCI Emerging Markets, 25% Eurozone government bonds, 10% EUR high yield and 5% in an overnight rate ETF as cash, plus a synthetic 20% EURO STOXX 50 futures overlay. The monitor computes the fund's 20 day 99% VaR, relative VaR against a 60/40 reference portfolio and commitment leverage, and checks each one against the UCITS hard limits and an internal amber threshold below them. Every morning it writes a short report that lists only what needs attention, meaning anything amber or in breach plus the three metrics that moved most overnight. The full metrics table is there if you ask for it, but the point of the report is that it fits on one screen.
 
