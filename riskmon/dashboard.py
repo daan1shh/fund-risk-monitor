@@ -165,6 +165,21 @@ def _movers(today, yesterday):
     return f'<ul class="movers">{"".join(items)}</ul>'
 
 
+def _holdings_table(portfolio):
+    names, ref = portfolio.get("names", {}), portfolio["reference"]
+    rows = "".join(
+        f"<tr><td class='mono'>{t}</td><td>{escape(names.get(t, ''))}</td><td class='num'>{w:.0%}</td>"
+        f"<td class='num'>{ref.get(t, 0):.0%}</td><td class='num'>{w - ref.get(t, 0):+.0%}</td></tr>"
+        for t, w in portfolio["holdings"].items())
+    # the overlay is notional exposure on top of fully invested holdings, so it has no reference weight
+    rows += "".join(
+        f"<tr><td></td><td>{escape(leg['instrument'])}, synthetic {leg['direction']} overlay</td>"
+        f"<td class='num'>{leg['notional_pct']:.0%}</td><td class='num'></td><td class='num'></td></tr>"
+        for leg in portfolio.get("overlay") or [])
+    return ("<div class='table-wrap'><table><tr><th>Ticker</th><th>Holding</th><th class='num'>Fund</th>"
+            f"<th class='num'>Reference</th><th class='num'>Active</th></tr>{rows}</table></div>")
+
+
 def _backtest_table(bt):
     rows = "".join(
         f"<tr><td>{r['model']}</td><td class='num'>{r['exceptions']}</td><td class='num'>{r['expected']:.1f}</td>"
@@ -210,6 +225,8 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
 <section><h2>Limits</h2><div class="tiles">{"".join(_tile(r) for r in rows)}</div>
 <p class="note">Bar shows utilisation of the hard limit, the black tick marks the amber threshold.</p></section>
 <section><h2>Largest overnight moves, since {previous:%Y-%m-%d}</h2>{_movers(today, yesterday)}</section>
+<section><h2>Holdings, weight of NAV</h2>{_holdings_table(portfolio)}
+<p class="note">Reference portfolio for relative VaR is 60% MSCI World and 40% Eurozone government bonds. Prices are daily Xetra closes. The overlay counts toward commitment leverage only, VaR is computed on the five ETFs.</p></section>
 <section><h2>Limit utilisation, last {HISTORY_DAYS} business days</h2>{util_html}</section>
 <section><h2>VaR model backtest, 1 day {bt["confidence"]:.0%}, last {bt["window"]} days</h2>
 {_backtest_table(bt)}

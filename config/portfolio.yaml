@@ -14,3 +14,9 @@ overlay:
 reference:
   XDWD.DE: 0.60
   XGLE.DE: 0.40
+names:
+  XDWD.DE: Xtrackers MSCI World UCITS ETF 1C
+  XMME.DE: Xtrackers MSCI Emerging Markets UCITS ETF 1C
+  XGLE.DE: Xtrackers II Eurozone Government Bond UCITS ETF 1C
+  XHYA.DE: Xtrackers II EUR High Yield Corporate Bond UCITS ETF 1C
+  XEON.DE: Xtrackers II EUR Overnight Rate Swap UCITS ETF 1C, the cash proxy
