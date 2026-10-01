@@ -1,6 +1,7 @@
 from datetime import datetime
 from html import escape
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -138,9 +139,10 @@ def backtest_chart(bt: dict) -> go.Figure:
     return _layout(fig, 360, "daily return, % of NAV")
 
 
-def _status_bar(name, nav, as_of, state):
+def _status_bar(name, nav, as_of, updated, state):
     return (f'<div class="status {state}"><span class="fund">{escape(name)}</span>'
             f'<span class="meta">NAV EUR {nav:,.0f}</span><span class="meta">as of {as_of}</span>'
+            f'<span class="meta">updated {updated}</span>'
             f'<span class="state {state}">{STATUS_WORDS[state]}</span></div>')
 
 
@@ -215,7 +217,8 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
     util_html = utilisation_chart(history, limits).to_html(
         full_html=False, include_plotlyjs=True, config=chart_config)
     bt_html = backtest_chart(bt).to_html(full_html=False, include_plotlyjs=False, config=chart_config)
-    stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # the workflow runs in utc, show the time a frankfurt reader would expect
+    stamp = datetime.now(ZoneInfo("Europe/Berlin")).strftime("%Y-%m-%d %H:%M %Z")
 
     html = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -223,7 +226,7 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
 <title>UCITS Risk Monitor</title>
 <style>{CSS}</style></head><body><main>
 <h1>UCITS Risk Monitor</h1>
-{_status_bar(portfolio["name"], portfolio["nav"], f"{as_of:%Y-%m-%d}", worst_status(rows))}
+{_status_bar(portfolio["name"], portfolio["nav"], f"{as_of:%Y-%m-%d}", stamp, worst_status(rows))}
 <section><h2>Limits</h2><div class="tiles">{"".join(_tile(r) for r in rows)}</div>
 <p class="note">Bar shows utilisation of the hard limit, the black tick marks the amber threshold.</p></section>
 <section><h2>Largest overnight moves, since {previous:%Y-%m-%d}</h2>{_movers(today, yesterday)}</section>
