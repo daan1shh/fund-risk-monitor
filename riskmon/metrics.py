@@ -90,4 +90,4 @@ def snapshot(returns: pd.DataFrame, portfolio: dict, limits: dict, as_of) -> dic
 
 
 def format_value(metric: str, value: float) -> str:
-    return f"{value:.2f}x" if metric in RATIOS else f"{value:.2%}"
+    return f"{value:.4f}x" if metric in RATIOS else f"{value:.2%}"

@@ -8,7 +8,7 @@ REPORT_DIR = Path(__file__).resolve().parent.parent / "reports"
 
 def format_move(metric, change):
     if metric in RATIOS:
-        return f"{change:+.3f}x"
+        return f"{change:+.4f}x"
     # fractions of nav move in basis points, a percent sign here would read as relative
     return f"{change * 1e4:+.1f}bp"
 
