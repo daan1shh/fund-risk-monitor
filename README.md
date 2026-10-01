@@ -26,6 +26,8 @@ The first run downloads about nine years of daily prices from Yahoo Finance and 
 
 `docs/index.html` is a single self contained page with the charting library inlined, so it opens offline on a double click. It shows the overall limit status first, then limit utilisation, the utilisation history over the last year, the backtest and a log of every amber or breach.
 
+A GitHub Actions workflow (`.github/workflows/morning.yml`) runs the tests, the monitor, the backtest and the dashboard at 05:00 UTC every weekday, commits the refreshed `docs/index.html` so the live page updates, and puts that morning's report in the run summary under the Actions tab.
+
 ## What the backtest shows
 
 Over the most recent 250 days markets were calm and the four models are hard to tell apart. Parametric normal, GARCH and filtered HS each have two exceptions against 2.5 expected, and historical simulation has none, which Kupiec rejects as too conservative. The differences show up once the window includes stress. Across 1,800 days from August 2019, parametric normal has 38 exceptions against 18 expected and fails Kupiec, while filtered HS has 25 and passes. In 2020 alone the normal model had 14 exceptions, deep in the red zone, against 4 for filtered HS. The normal model misses because it has no fat tails and its volatility estimate reacts slowly. Filtered HS takes the current volatility level from GARCH and the shape of the tails from its own standardised residuals, so it adapts when a shock arrives without assuming normality.
