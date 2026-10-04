@@ -1,4 +1,4 @@
-TRACKED = ["absolute_var", "relative_var", "commitment_leverage"]
+TRACKED = ["absolute_var", "relative_var", "es_20d", "commitment_leverage"]
 SEVERITY = {"ok": 0, "amber": 1, "breach": 2}
 
 

@@ -7,6 +7,9 @@ relative_var:
 commitment_leverage:
   hard: 2.00
   amber: 1.70
+es_20d:
+  hard: 0.25        # internal, ucits sets no es limit. es at 99% runs about 1.2-1.4x var, so in line with the 20% var limit
+  amber: 0.20       # 80% of the hard limit
 var_lookback_days: 500
 var_confidence: 0.99
 holding_period_days: 20
