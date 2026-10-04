@@ -158,6 +158,24 @@ def _tile(row):
             f'<span class="word">{STATUS_WORDS[row["status"]]}</span></div></div>')
 
 
+def _es_tile(today):
+    # ucits sets no limit on expected shortfall, so the tile has no bar and no status
+    ratio = today["es_20d"] / today["absolute_var"]
+    return (f'<div class="tile"><div class="name">{LABELS["es_20d"]}</div>'
+            f'<div class="value">{format_value("es_20d", today["es_20d"])}</div>'
+            f'<div class="bar" style="visibility:hidden"></div>'
+            f'<div class="sub"><span>{ratio:.2f}x the absolute VaR</span>'
+            f'<span class="word">no limit, monitored</span></div></div>')
+
+
+def _leverage_note(rows):
+    lev = next(r for r in rows if r["metric"] == "commitment_leverage")
+    return (f'<p class="note">{LABELS["commitment_leverage"]} '
+            f'<span class="mono">{format_value("commitment_leverage", lev["value"])}</span> against a '
+            f'<span class="mono">{format_value("commitment_leverage", lev["hard"])}</span> limit, '
+            f'{lev["utilisation"]:.0%} used, {STATUS_WORDS[lev["status"]]}. It only changes when the weights or the overlay change.</p>')
+
+
 def _movers(today, yesterday):
     items = []
     for m in largest_moves(today, yesterday):
@@ -227,11 +245,12 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
 <style>{CSS}</style></head><body><main>
 <h1>UCITS Risk Monitor</h1>
 {_status_bar(portfolio["name"], portfolio["nav"], f"{as_of:%Y-%m-%d}", stamp, worst_status(rows))}
-<section><h2>Limits</h2><div class="tiles">{"".join(_tile(r) for r in rows)}</div>
-<p class="note">Bar shows utilisation of the hard limit, the black tick marks the amber threshold.</p></section>
+<section><h2>Limits</h2><div class="tiles">{"".join(_tile(r) for r in rows if r["metric"] != "commitment_leverage")}{_es_tile(today)}</div>
+<p class="note">On the VaR tiles the bar shows utilisation of the hard limit and the black tick marks the amber threshold. Expected shortfall is the average loss on the days worse than the VaR. UCITS sets no limit on it, so it is shown for information.</p></section>
 <section><h2>Largest overnight moves, since {previous:%Y-%m-%d}</h2>{_movers(today, yesterday)}</section>
 <section><h2>Holdings, weight of NAV</h2>{_holdings_table(portfolio)}
-<p class="note">Reference portfolio for relative VaR is 60% MSCI World and 40% Eurozone government bonds. Prices are daily Xetra closes. The overlay counts toward commitment leverage only, VaR is computed on the five ETFs.</p></section>
+<p class="note">Reference portfolio for relative VaR is 60% MSCI World and 40% Eurozone government bonds. Prices are daily Xetra closes. The overlay counts toward commitment leverage only, VaR is computed on the five ETFs.</p>
+{_leverage_note(rows)}</section>
 <section><h2>Limit utilisation, last {HISTORY_DAYS} business days</h2>{util_html}</section>
 <section><h2>VaR model backtest, 1 day {bt["confidence"]:.0%}, last {bt["window"]} days</h2>
 {_backtest_table(bt)}
