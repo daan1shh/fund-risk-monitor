@@ -8,9 +8,10 @@ commitment_leverage:
   hard: 2.00
   amber: 1.70
 es_20d:
-  hard: 0.25        # internal, ucits sets no es limit. es at 99% runs about 1.2-1.4x var, so in line with the 20% var limit
-  amber: 0.20       # 80% of the hard limit
+  hard: 0.20        # internal, ucits sets no es limit. 97.5% es as in basel frtb, which matches 99% var under normality, so it shares the 20% var limit
+  amber: 0.16       # 80% of the hard limit
 var_lookback_days: 500
 var_confidence: 0.99
+es_confidence: 0.975
 holding_period_days: 20
 backtest_window: 250

@@ -238,7 +238,7 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
 <h1>UCITS Risk Monitor</h1>
 {_status_bar(portfolio["name"], portfolio["nav"], f"{as_of:%Y-%m-%d}", stamp, worst_status(rows))}
 <section><h2>Limits</h2><div class="tiles">{"".join(_tile(r) for r in rows if r["metric"] != "commitment_leverage")}</div>
-<p class="note">The bar shows utilisation of the hard limit and the black tick marks the amber threshold. Expected shortfall is the average loss on the days worse than the VaR. UCITS sets no limit on it, so its 25% limit is an internal one, set in line with the 20% VaR limit.</p></section>
+<p class="note">The bar shows utilisation of the hard limit and the black tick marks the amber threshold. Expected shortfall is the average loss on the worst 2.5% of days. UCITS sets no limit on it, so its 20% limit is an internal one. It follows Basel FRTB, which uses 97.5% expected shortfall because it matches 99% VaR under a normal distribution, so it shares the 20% VaR limit.</p></section>
 <section><h2>Largest overnight moves, since {previous:%Y-%m-%d}</h2>{_movers(today, yesterday)}</section>
 <section><h2>Holdings, weight of NAV</h2>{_holdings_table(portfolio)}
 <p class="note">Reference portfolio for relative VaR is 60% MSCI World and 40% Eurozone government bonds. Prices are daily Xetra closes. The overlay counts toward commitment leverage only, VaR is computed on the five ETFs.</p>
