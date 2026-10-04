@@ -233,9 +233,9 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
     html = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UCITS Risk Monitor</title>
+<title>Fund Risk Monitor</title>
 <style>{CSS}</style></head><body><main>
-<h1>UCITS Risk Monitor</h1>
+<h1>Fund Risk Monitor</h1>
 {_status_bar(portfolio["name"], portfolio["nav"], f"{as_of:%Y-%m-%d}", stamp, worst_status(rows))}
 <section><h2>Limits</h2><div class="tiles">{"".join(_tile(r) for r in rows if r["metric"] != "commitment_leverage")}</div>
 <p class="note">The bar shows utilisation of the hard limit and the black tick marks the amber threshold. Expected shortfall is the average loss on the worst 2.5% of days. UCITS sets no limit on it, so its 20% limit is an internal one. It follows Basel FRTB, which uses 97.5% expected shortfall because it matches 99% VaR under a normal distribution, so it shares the 20% VaR limit.</p></section>

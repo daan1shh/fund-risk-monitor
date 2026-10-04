@@ -1,8 +1,8 @@
-# UCITS Risk Monitor
+# Fund Risk Monitor
 
 A small daily risk monitor for a UCITS style fund, and a validation of the VaR model behind it.
 
-The latest dashboard is at [daan1shh.github.io/ucits-risk-monitor](https://daan1shh.github.io/ucits-risk-monitor/) and opens in any browser.
+The latest dashboard is at [daan1shh.github.io/fund-risk-monitor](https://daan1shh.github.io/fund-risk-monitor/) and opens in any browser.
 
 The monitored fund holds five Xtrackers ETFs, 45% MSCI World, 15% MSCI Emerging Markets, 25% Eurozone government bonds, 10% EUR high yield and 5% in an overnight rate ETF as cash, plus a synthetic 20% EURO STOXX 50 futures overlay. The monitor computes the fund's 20 day 99% VaR, relative VaR against a 60/40 reference portfolio, 20 day 97.5% expected shortfall and commitment leverage, and checks each one against its hard limit and an internal amber threshold below it. The VaR and leverage limits are the UCITS ones. UCITS sets no limit on expected shortfall, so its 20% limit is an internal one. It is measured at 97.5% as in the Basel FRTB market risk rules, which chose that level because 97.5% expected shortfall matches 99% VaR under a normal distribution, so it shares the 20% VaR limit. Every morning it writes a short report that lists only what needs attention, meaning anything amber or in breach plus the three metrics that moved most overnight. The full metrics table is there if you ask for it, but the point of the report is that it fits on one screen.
 
