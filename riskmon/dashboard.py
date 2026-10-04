@@ -255,7 +255,7 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
 <section><h2>VaR model backtest, 1 day {bt["confidence"]:.0%}, last {bt["window"]} days</h2>
 {_backtest_table(bt)}
 <p class="note">Expected exceptions at {bt["confidence"]:.0%} over {bt["window"]} days is {bt["window"] * (1 - bt["confidence"]):.1f}.
-Kupiec fails either way, too many exceptions or too few. GARCH refitted every {bt["refit_every"]} days.</p>
+Kupiec fails either way, too many exceptions or too few.</p>
 {bt_html}</section>
 <section><h2>Exception log</h2>{_exception_log(history)}</section>
 <footer>Generated {stamp} from public market data (Yahoo Finance ETF prices) for a personal learning project.</footer>

@@ -21,7 +21,7 @@ def backtest():
     returns = build_returns(load_prices(universe(portfolio)))
     port = portfolio_returns(returns, portfolio["holdings"])
     conf = limits["var_confidence"]
-    print(f"backtesting {limits['backtest_window']} days, garch refit every {bt.REFIT_EVERY}")
+    print(f"backtesting {limits['backtest_window']} days")
     var = bt.rolling_var(port, limits["backtest_window"], limits["var_lookback_days"], conf)
     table = bt.compare_models(var, conf)
     bt.print_table(table)

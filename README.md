@@ -6,7 +6,7 @@ The latest dashboard is at [daan1shh.github.io/ucits-risk-monitor](https://daan1
 
 The monitored fund holds five Xtrackers ETFs, 45% MSCI World, 15% MSCI Emerging Markets, 25% Eurozone government bonds, 10% EUR high yield and 5% in an overnight rate ETF as cash, plus a synthetic 20% EURO STOXX 50 futures overlay. The monitor computes the fund's 20 day 99% VaR, relative VaR against a 60/40 reference portfolio and commitment leverage, and checks each one against the UCITS hard limits and an internal amber threshold below them. Every morning it writes a short report that lists only what needs attention, meaning anything amber or in breach plus the three metrics that moved most overnight. The full metrics table is there if you ask for it, but the point of the report is that it fits on one screen.
 
-The second half asks whether the VaR number can be trusted. It backtests four one day VaR estimators over the last 250 days (historical simulation, parametric normal, GARCH(1,1) with Student t innovations, and filtered historical simulation), counts the days where the realised loss beat the forecast, and scores each model with the Basel traffic light and the Kupiec proportion of failures test.
+The second half asks whether the VaR number can be trusted. It backtests the historical simulation VaR the monitor uses against a parametric normal VaR over the last 250 days, counts the days where the realised loss beat the forecast, and scores each model with the Basel traffic light and the Kupiec proportion of failures test.
 
 I built it to understand the daily cycle of a liquid investment risk team before starting a risk management internship. It uses only public market data and is not modelled on any firm's internal tooling.
 
@@ -24,13 +24,15 @@ python -m pytest
 
 The first run downloads about nine years of daily prices from Yahoo Finance and caches them as parquet in `data/cache/`. Later runs only fetch the last few days. Portfolio weights and NAV live in `config/portfolio.yaml` and every limit lives in `config/limits.yaml`, so nothing in the risk code is hardcoded.
 
-`docs/index.html` is a single self contained page with the charting library inlined, so it opens offline on a double click. It shows the overall limit status first, then limit utilisation, the utilisation history over the last year, the backtest and a log of every amber or breach.
+`docs/index.html` is a single self contained page with the charting library inlined, so it opens offline on a double click. It shows the overall limit status first, then the two VaR limits and expected shortfall, the utilisation history over the last year, the backtest and a log of every amber or breach.
 
 A GitHub Actions workflow (`.github/workflows/morning.yml`) runs the tests, the monitor, the backtest and the dashboard at 05:00 UTC every weekday, commits the refreshed `docs/index.html` so the live page updates, and puts that morning's report in the run summary under the Actions tab.
 
 ## What the backtest shows
 
-Over the most recent 250 days markets were calm and the four models are hard to tell apart. Parametric normal, GARCH and filtered HS each have two exceptions against 2.5 expected, and historical simulation has none, which Kupiec rejects as too conservative. The differences show up once the window includes stress. Across 1,800 days from August 2019, parametric normal has 38 exceptions against 18 expected and fails Kupiec, while filtered HS has 25 and passes. In 2020 alone the normal model had 14 exceptions, deep in the red zone, against 4 for filtered HS. The normal model misses because it has no fat tails and its volatility estimate reacts slowly. Filtered HS takes the current volatility level from GARCH and the shape of the tails from its own standardised residuals, so it adapts when a shock arrives without assuming normality.
+Over the most recent 250 days markets were calm. Parametric normal has two exceptions against 2.5 expected and passes. Historical simulation has none, which Kupiec rejects as too conservative, because the April 2025 sell-off sits in its 500 day window and holds the VaR above every loss of the year.
+
+The picture changes once the window includes stress. Across 1,857 days from June 2019, parametric normal has 40 exceptions against 18.6 expected and fails Kupiec, while historical simulation has 27 and passes. In 2020 the normal model had 14 exceptions, in the red zone, against 9 for historical simulation. The normal model misses because real returns have fatter tails than a normal distribution. Historical simulation passes on the total but its exceptions bunch up in crisis years (9 in 2020, 7 in 2022, 7 in 2025) and almost disappear in calm ones, because a shock stays in the window at full weight for two years and then drops out at once.
 
 ## Limitations
 

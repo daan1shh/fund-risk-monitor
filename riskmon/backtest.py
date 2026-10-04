@@ -5,30 +5,23 @@ import pandas as pd
 from scipy import stats
 from scipy.special import xlogy
 
-from riskmon.models import fhs_var, fit_garch, garch_var, historical_var, normal_var
+from riskmon.metrics import historical_var
+from riskmon.models import normal_var
 
 BACKTEST_FILE = Path(__file__).resolve().parent.parent / "reports" / "backtest.json"
-MODELS = ["Historical simulation", "Parametric normal", "GARCH(1,1) t", "Filtered HS"]
-# refitting garch every day for 250 days is slow and the parameters barely move,
-# so refit monthly and roll the variance forward daily with the last parameters
-REFIT_EVERY = 20
+MODELS = ["Historical simulation", "Parametric normal"]
 
 
 def rolling_var(port: pd.Series, window: int, lookback: int, confidence: float) -> pd.DataFrame:
     """One day VaR from each model for each of the last window days, fitted on prior data only."""
     rows = []
-    start = len(port) - window
-    for i in range(start, len(port)):
+    for i in range(len(port) - window, len(port)):
         history = port.iloc[i - lookback:i]
-        if (i - start) % REFIT_EVERY == 0:
-            params = fit_garch(history)
         rows.append({
             "date": port.index[i],
             "pnl": port.iloc[i],
             "Historical simulation": historical_var(history, confidence),
             "Parametric normal": normal_var(history, confidence),
-            "GARCH(1,1) t": garch_var(history, confidence, params),
-            "Filtered HS": fhs_var(history, confidence, params),
         })
     return pd.DataFrame(rows).set_index("date")
 
@@ -81,7 +74,6 @@ def save(var: pd.DataFrame, table: list[dict], confidence: float):
     payload = {
         "confidence": confidence,
         "window": len(var),
-        "refit_every": REFIT_EVERY,
         "models": table,
         "dates": [d.strftime("%Y-%m-%d") for d in var.index],
         "pnl": var["pnl"].round(6).tolist(),
