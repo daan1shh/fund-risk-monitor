@@ -93,17 +93,32 @@ def _end_label(fig, y, text, color=INK, yanchor="middle"):
                        yanchor=yanchor, font=dict(color=color, size=11))
 
 
+def _spread(ys: list[float], gap: float) -> list[float]:
+    """Push label positions apart so no two sit closer than gap, keeping their order."""
+    order = sorted(range(len(ys)), key=lambda i: ys[i])
+    placed = list(ys)
+    for prev, cur in zip(order, order[1:]):
+        placed[cur] = max(placed[cur], placed[prev] + gap)
+    return placed
+
+
 def utilisation_chart(history: pd.DataFrame, limits: dict) -> go.Figure:
     # leverage only moves when the weights do, so it is shown under the holdings, not here
     charted = [m for m in TRACKED if m != "commitment_leverage"]
     history = history[history["metric"].isin(charted)]
+    y_top = max(110, history["utilisation"].max() * 105)
     fig = go.Figure()
+    ends = []
     for metric, color in zip(charted, SERIES):
         series = history[history["metric"] == metric]
         fig.add_trace(go.Scatter(x=series["date"], y=series["utilisation"] * 100, name=LABELS[metric],
                                  line=dict(color=color, width=2),
                                  hovertemplate="%{y:.1f}%<extra>" + LABELS[metric] + "</extra>"))
-        _end_label(fig, series["utilisation"].iloc[-1] * 100, LABELS[metric])
+        ends.append(series["utilisation"].iloc[-1] * 100)
+    # lines that end close together would print their labels on top of each other,
+    # so spread them about one text line apart (about 14px of a roughly 280px plot)
+    for metric, color, y in zip(charted, SERIES, _spread(ends, y_top * 14 / 280)):
+        _end_label(fig, y, LABELS[metric], color)
     fig.add_hline(y=100, line=dict(color=INK, width=1.5))
     _end_label(fig, 100, "hard limit 100%")
     # amber sits at a different share of the hard limit for each limit, so draw each distinct level
@@ -113,7 +128,7 @@ def utilisation_chart(history: pd.DataFrame, limits: dict) -> go.Figure:
         # alternate above and below the line so neighbouring amber levels do not collide
         _end_label(fig, level, f"amber {level}%", MUTED, "top" if i % 2 == 0 else "bottom")
     fig.update_xaxes(range=[history["date"].min(), history["date"].max()])
-    fig.update_yaxes(range=[0, max(110, history["utilisation"].max() * 105)], ticksuffix="%")
+    fig.update_yaxes(range=[0, y_top], ticksuffix="%")
     return _layout(fig, 340, "utilisation of hard limit")
 
 
