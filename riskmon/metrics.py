@@ -66,12 +66,17 @@ def max_drawdown(returns) -> float:
     return float(-(value / peak - 1).min())
 
 
+def limit_reference(portfolio: dict) -> dict:
+    """Weights of the reference portfolio the relative VaR limit is set against."""
+    return portfolio["references"][portfolio["limit_reference"]]
+
+
 def snapshot(returns: pd.DataFrame, portfolio: dict, limits: dict, as_of) -> dict:
     """Every monitored metric using only data up to and including as_of."""
     window = returns.loc[:as_of].tail(limits["var_lookback_days"])
     conf, horizon = limits["var_confidence"], limits["holding_period_days"]
     port = portfolio_returns(window, portfolio["holdings"])
-    ref = portfolio_returns(window, portfolio["reference"])
+    ref = portfolio_returns(window, limit_reference(portfolio))
 
     var_1d = historical_var(port, conf)
     abs_var = scale_var(var_1d, horizon)
@@ -87,6 +92,27 @@ def snapshot(returns: pd.DataFrame, portfolio: dict, limits: dict, as_of) -> dic
         "tracking_error": tracking_error(port, ref),
         "max_drawdown": max_drawdown(port),
     }
+
+
+def reference_comparison(returns: pd.DataFrame, portfolio: dict, limits: dict, as_of) -> list[dict]:
+    """VaR, relative VaR and tracking error of the fund against every reference portfolio."""
+    window = returns.loc[:as_of].tail(limits["var_lookback_days"])
+    conf, horizon = limits["var_confidence"], limits["holding_period_days"]
+    port = portfolio_returns(window, portfolio["holdings"])
+    abs_var = scale_var(historical_var(port, conf), horizon)
+    rows = []
+    for name, weights in portfolio["references"].items():
+        ref = portfolio_returns(window, weights)
+        ref_var = scale_var(historical_var(ref, conf), horizon)
+        rows.append({
+            "name": name,
+            "weights": weights,
+            "ref_var": ref_var,
+            "relative_var": abs_var / ref_var,
+            "tracking_error": tracking_error(port, ref),
+            "limit": name == portfolio["limit_reference"],
+        })
+    return rows
 
 
 def format_value(metric: str, value: float) -> str:

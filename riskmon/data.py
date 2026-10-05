@@ -17,7 +17,10 @@ def load_config() -> tuple[dict, dict]:
 
 
 def universe(portfolio: dict) -> list[str]:
-    return sorted(set(portfolio["holdings"]) | set(portfolio["reference"]))
+    tickers = set(portfolio["holdings"])
+    for weights in portfolio["references"].values():
+        tickers |= set(weights)
+    return sorted(tickers)
 
 
 def _download(ticker, start=None):

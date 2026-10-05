@@ -11,9 +11,17 @@ overlay:
   - instrument: EURO STOXX 50 future
     notional_pct: 0.20
     direction: long
-reference:
-  XDWD.DE: 0.60
-  XGLE.DE: 0.40
+# reference portfolios the fund is compared against. ucits measures relative var against one,
+# so only limit_reference counts toward the limit, the others are shown for comparison
+limit_reference: 60/40
+references:
+  60/40:
+    XDWD.DE: 0.60
+    XGLE.DE: 0.40
+  MSCI World:
+    XDWD.DE: 1.00
+  Eurozone government bonds:
+    XGLE.DE: 1.00
 names:
   XDWD.DE: Xtrackers MSCI World UCITS ETF 1C
   XMME.DE: Xtrackers MSCI Emerging Markets UCITS ETF 1C

@@ -6,14 +6,15 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import plotly.graph_objects as go
 
-from riskmon.limits import TRACKED, check_limits, largest_moves, worst_status
-from riskmon.metrics import LABELS, format_value, snapshot
+from riskmon.limits import TRACKED, check_limits, classify, largest_moves, worst_status
+from riskmon.metrics import LABELS, format_value, limit_reference, reference_comparison, snapshot
 from riskmon.report import format_move
 
 DASHBOARD_FILE = Path(__file__).resolve().parent.parent / "docs" / "index.html"
 HISTORY_DAYS = 252
 
 STATUS_WORDS = {"ok": "within limits", "amber": "amber, approaching a limit", "breach": "breach"}
+HYPOTHETICAL_WORDS = {"ok": "would be within", "amber": "would be amber", "breach": "would breach"}
 # series colours only, so green, amber and red stay reserved for status
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]
 INK, MUTED, GRID = "#0b0b0b", "#6b6a65", "#e1e0d9"
@@ -49,6 +50,10 @@ h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacin
 .tile .sub { display: flex; justify-content: space-between; color: var(--muted);
   font-family: var(--mono); font-size: 12px; }
 .tile .word { font-family: inherit; font-weight: 600; color: var(--ink); }
+.pill { font-weight: 600; padding: 1px 8px; white-space: nowrap; }
+.pill.ok { background: var(--ok); color: #000; } .pill.amber { background: var(--amber); color: #000; }
+.pill.breach { background: var(--breach); color: #fff; }
+.hypo { color: var(--muted); font-style: italic; white-space: nowrap; }
 .bar { position: relative; height: 10px; background: #f0efec; margin: 10px 0 6px; }
 .bar .fill { position: absolute; left: 0; top: 0; bottom: 0; }
 .fill.ok { background: var(--ok); } .fill.amber { background: var(--amber); }
@@ -194,7 +199,7 @@ def _movers(today, yesterday):
 
 
 def _holdings_table(portfolio):
-    names, ref = portfolio.get("names", {}), portfolio["reference"]
+    names, ref = portfolio.get("names", {}), limit_reference(portfolio)
     rows = "".join(
         f"<tr><td class='mono'>{t}</td><td>{escape(names.get(t, ''))}</td><td class='num'>{w:.0%}</td>"
         f"<td class='num'>{ref.get(t, 0):.0%}</td><td class='num'>{w - ref.get(t, 0):+.0%}</td></tr>"
@@ -205,7 +210,40 @@ def _holdings_table(portfolio):
         f"<td class='num'>{leg['notional_pct']:.0%}</td><td class='num'></td><td class='num'></td></tr>"
         for leg in portfolio.get("overlay") or [])
     return ("<div class='table-wrap'><table><tr><th>Ticker</th><th>Holding</th><th class='num'>Fund</th>"
-            f"<th class='num'>Reference</th><th class='num'>Active</th></tr>{rows}</table></div>")
+            f"<th class='num'>Reference {escape(portfolio['limit_reference'])}</th>"
+            f"<th class='num'>Active</th></tr>{rows}</table></div>")
+
+
+def _reference_table(comparison, portfolio, limits, abs_var):
+    hard, amber = limits["relative_var"]["hard"], limits["relative_var"]["amber"]
+    rows = ""
+    # highest ratio first, so the table reads from the reference that would breach down to the one far inside
+    for r in sorted(comparison, key=lambda r: r["relative_var"], reverse=True):
+        status = classify(r["relative_var"], hard, amber)
+        mix = ", ".join(f"{w:.0%} {t}" for t, w in r["weights"].items())
+        if r["limit"]:
+            name = f"<b>{escape(r['name'])}</b>, limit reference"
+            word = f"<span class='pill {status}'>{STATUS_WORDS[status]}</span>"
+        else:
+            # only the limit reference gets a status colour, so a hypothetical breach never reads as a real one
+            name = escape(r["name"])
+            word = f"<span class='hypo'>{HYPOTHETICAL_WORDS[status]}</span>"
+        rows += (f"<tr><td>{name}</td><td class='mono'>{mix}</td>"
+                 f"<td class='num'>{format_value('ref_var', r['ref_var'])}</td>"
+                 f"<td class='num'>{format_value('relative_var', r['relative_var'])}</td>"
+                 f"<td class='num'>{r['relative_var'] / hard:.0%}</td><td>{word}</td>"
+                 f"<td class='num'>{format_value('tracking_error', r['tracking_error'])}</td></tr>")
+    return ("<div class='table-wrap'><table><tr><th>Reference</th><th>Weights</th>"
+            "<th class='num'>VaR 20d 99%</th><th class='num'>Fund relative VaR</th>"
+            f"<th class='num'>Of {hard:.0%} limit</th><th>Status</th>"
+            f"<th class='num'>Tracking error</th></tr>{rows}</table></div>"
+            f"<p class='note'>The fund is the same in every row, with absolute VaR "
+            f"<span class='mono'>{format_value('absolute_var', abs_var)}</span>, and only the yardstick changes. "
+            "Measured against bonds a fund mostly in risk assets looks two to three times as risky every day, "
+            "and measured against equities it looks comfortably safe. UCITS requires the reference portfolio to "
+            "match the fund's investment policy and measures relative VaR against that one portfolio, so only the "
+            f"{escape(portfolio['limit_reference'])} counts toward the limit. The other two rows show what the "
+            "ratio would be if they were the reference.</p>")
 
 
 def _backtest_table(bt):
@@ -236,6 +274,7 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
     today = snapshot(returns, portfolio, limits, as_of)
     yesterday = snapshot(returns, portfolio, limits, previous)
     rows = check_limits(today, limits)
+    comparison = reference_comparison(returns, portfolio, limits, as_of)
     history = limit_history(returns, portfolio, limits)
 
     chart_config = {"displayModeBar": False, "responsive": True}
@@ -256,8 +295,9 @@ def build_dashboard(returns: pd.DataFrame, portfolio: dict, limits: dict, bt: di
 <p class="note">The bar shows utilisation of the hard limit and the black tick marks the amber threshold. Expected shortfall is the average loss on the worst 2.5% of days. UCITS sets no limit on it, so its 20% limit is an internal one. It follows Basel FRTB, which uses 97.5% expected shortfall because it matches 99% VaR under a normal distribution, so it shares the 20% VaR limit.</p></section>
 <section><h2>Largest overnight moves, since {previous:%Y-%m-%d}</h2>{_movers(today, yesterday)}</section>
 <section><h2>Holdings, weight of NAV</h2>{_holdings_table(portfolio)}
-<p class="note">Reference portfolio for relative VaR is 60% MSCI World and 40% Eurozone government bonds. Prices are daily Xetra closes. The overlay counts toward commitment leverage only, VaR is computed on the five ETFs.</p>
+<p class="note">Active weights are against the {escape(portfolio["limit_reference"])} reference portfolio. Prices are daily Xetra closes. The overlay counts toward commitment leverage only, VaR is computed on the five ETFs.</p>
 {_leverage_note(rows)}</section>
+<section><h2>Reference portfolios</h2>{_reference_table(comparison, portfolio, limits, today["absolute_var"])}</section>
 <section><h2>Limit utilisation, last {HISTORY_DAYS} business days</h2>{util_html}</section>
 <section><h2>VaR model backtest, 1 day {bt["confidence"]:.0%}, last {bt["window"]} days</h2>
 {_backtest_table(bt)}
